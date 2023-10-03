@@ -6,6 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Sanssoussi.Data;
 using Sanssoussi.DatabaseAccesor;
+using System;
+using System.Net;
+using System.Runtime;
 
 namespace Sanssoussi
 {
@@ -25,9 +28,7 @@ namespace Sanssoussi
                             options.UseSqlite(
                                 context.Configuration.GetConnectionString("SanssoussiContextConnection")));
 
-            
         }
-
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -36,6 +37,8 @@ namespace Sanssoussi
             services.AddControllersWithViews();
 
             services.AddScoped<IDatabaseAccessor, ConcreteSqliteAccesor>();
+
+            services.AddCors();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -49,25 +52,26 @@ namespace Sanssoussi
             else
             {
                 app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
             }
 
-            app.UseStaticFiles();
+        app.UseStaticFiles();
 
-            app.UseRouting();
-            app.UseAuthentication();
+        app.UseRouting();
+        app.UseAuthentication();
 
-            app.UseAuthorization();
 
-            app.UseEndpoints(
-                endpoints =>
-                {
-                    endpoints.MapControllerRoute(
-                        name: "default",
-                        pattern: "{controller=Home}/{action=Index}/{id?}");
-                    endpoints.MapRazorPages();
-                });
+        AppContext.SetSwitch("SCH_USE_STRONG_CRYPTO", true);
 
-            
+        app.UseAuthorization();
+        app.UseEndpoints(
+            endpoints =>
+            {
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapRazorPages();
+            });         
         }
     }
 }
