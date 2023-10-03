@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Sanssoussi.Areas.Identity;
 using Sanssoussi.Areas.Identity.Data;
 using Sanssoussi.Data;
+using Sanssoussi.DatabaseAccesor;
 
 [assembly: HostingStartup(typeof(IdentityHostingStartup))]
 
@@ -19,6 +20,11 @@ namespace Sanssoussi.Areas.Identity
                 (context, services) =>
                 {
                     services.AddDbContext<SanssoussiContext>(
+                        options =>
+                            options.UseSqlite(
+                                context.Configuration.GetConnectionString("SanssoussiContextConnection")));
+
+                    services.AddDbContext<SanssoussiApplicationDataContext>(
                         options =>
                             options.UseSqlite(
                                 context.Configuration.GetConnectionString("SanssoussiContextConnection")));

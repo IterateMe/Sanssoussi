@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Sanssoussi.Data;
+using Sanssoussi.DatabaseAccesor;
 
 namespace Sanssoussi
 {
@@ -15,11 +18,24 @@ namespace Sanssoussi
             this.Configuration = configuration;
         }
 
+        public void ConfigureDatabaseContexte(IServiceCollection services, WebHostBuilderContext context)
+        {
+            services.AddDbContext<SanssoussiContext>(
+                        options =>
+                            options.UseSqlite(
+                                context.Configuration.GetConnectionString("SanssoussiContextConnection")));
+
+            
+        }
+
+
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
             services.AddControllersWithViews();
+
+            services.AddScoped<IDatabaseAccessor, ConcreteSqliteAccesor>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,6 +66,8 @@ namespace Sanssoussi
                         pattern: "{controller=Home}/{action=Index}/{id?}");
                     endpoints.MapRazorPages();
                 });
+
+            
         }
     }
 }

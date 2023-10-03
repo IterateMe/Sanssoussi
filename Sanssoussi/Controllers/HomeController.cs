@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 using Sanssoussi.Areas.Identity.Data;
+using Sanssoussi.DatabaseAccesor;
 using Sanssoussi.Models;
 
 namespace Sanssoussi.Controllers
@@ -23,11 +25,14 @@ namespace Sanssoussi.Controllers
 
         private readonly UserManager<SanssoussiUser> _userManager;
 
-        public HomeController(ILogger<HomeController> logger, UserManager<SanssoussiUser> userManager, IConfiguration configuration)
+        private readonly IDatabaseAccessor _databaseAccessor;
+
+        public HomeController(ILogger<HomeController> logger, UserManager<SanssoussiUser> userManager, IConfiguration configuration, IDatabaseAccessor databaseAccessor)
         {
             this._logger = logger;
             this._userManager = userManager;
             this._dbConnection = new SqliteConnection(configuration.GetConnectionString("SanssoussiContextConnection"));
+            this._databaseAccessor = databaseAccessor;
         }
 
         public IActionResult Index()
@@ -47,19 +52,7 @@ namespace Sanssoussi.Controllers
                 return this.View(comments);
             }
 
-            var cmd = new SqliteCommand($"Select Comment from Comments where UserId ='{user.Id}'", this._dbConnection);
-            this._dbConnection.Open();
-            var rd = await cmd.ExecuteReaderAsync();
-
-            while (rd.Read())
-            {
-                comments.Add(rd.GetString(0));
-            }
-
-            rd.Close();
-            this._dbConnection.Close();
-
-            return this.View(comments);
+            return this.View(_databaseAccessor.GetComments(user).Select(comment=>comment.Comment).ToList());
         }
 
         [HttpPost]
@@ -71,13 +64,9 @@ namespace Sanssoussi.Controllers
                 throw new InvalidOperationException("Vous devez vous connecter");
             }
 
-            var cmd = new SqliteCommand(
-                $"insert into Comments (UserId, CommentId, Comment) Values ('{user.Id}','{Guid.NewGuid()}','" + comment + "')",
-                this._dbConnection);
-            this._dbConnection.Open();
-            await cmd.ExecuteNonQueryAsync();
-
-            return this.Ok("Commentaire ajouté");
+            return _databaseAccessor.PostComments(new CommentModel(Guid.NewGuid().ToString(), user.Id.ToString(), comment)) ?
+             this.Ok("Commentaire ajouté") : 
+             this.Error();
         }
 
         public async Task<IActionResult> Search(string searchData)
@@ -90,18 +79,7 @@ namespace Sanssoussi.Controllers
                 return this.View(searchResults);
             }
 
-            var cmd = new SqliteCommand($"Select Comment from Comments where UserId = '{user.Id}' and Comment like '%{searchData}%'", this._dbConnection);
-            this._dbConnection.Open();
-            var rd = await cmd.ExecuteReaderAsync();
-            while (rd.Read())
-            {
-                searchResults.Add(rd.GetString(0));
-            }
-
-            rd.Close();
-            this._dbConnection.Close();
-
-            return this.View(searchResults);
+            return this.View(_databaseAccessor.SearchComment(user, searchData).Select(comment=>comment.Comment).ToList());
         }
 
         public IActionResult About()
@@ -134,22 +112,11 @@ namespace Sanssoussi.Controllers
 
             var user = await this._userManager.GetUserAsync(this.User);
             var roles = await this._userManager.GetRolesAsync(user);
-            if (roles.Contains("admin"))
-            {
-                var cmd = new SqliteCommand("select Email from AspNetUsers", this._dbConnection);
-                this._dbConnection.Open();
-                var rd = await cmd.ExecuteReaderAsync();
-                while (rd.Read())
-                {
-                    searchResults.Add(rd.GetString(0));
-                }
-
-                rd.Close();
-
-                this._dbConnection.Close();
-            }
-
-            return this.Json(searchResults);
+            
+            return roles.Contains("admin")?
+                this.Json(_databaseAccessor.GetEmails().ToList()):
+                this.Json(searchResults);
+             
         }
     }
 }
