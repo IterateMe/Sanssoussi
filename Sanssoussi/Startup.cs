@@ -1,14 +1,14 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Sanssoussi.Data;
 using Sanssoussi.DatabaseAccesor;
 using System;
-using System.Net;
-using System.Runtime;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 
 namespace Sanssoussi
 {
@@ -21,24 +21,23 @@ namespace Sanssoussi
             this.Configuration = configuration;
         }
 
-        public void ConfigureDatabaseContexte(IServiceCollection services, WebHostBuilderContext context)
-        {
-            services.AddDbContext<SanssoussiContext>(
-                        options =>
-                            options.UseSqlite(
-                                context.Configuration.GetConnectionString("SanssoussiContextConnection")));
-
-        }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
             services.AddRazorPages();
             services.AddControllersWithViews();
 
             services.AddScoped<IDatabaseAccessor, ConcreteSqliteAccesor>();
 
             services.AddCors();
+
+            services.AddAuthentication().AddGoogle(GoogleDefaults.AuthenticationScheme,googleOptions =>
+            {
+                googleOptions.ClientId = Configuration["Authentication:Google:ClientId"];
+                googleOptions.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -55,23 +54,23 @@ namespace Sanssoussi
                 app.UseHsts();
             }
 
-        app.UseStaticFiles();
+            app.UseStaticFiles();
 
-        app.UseRouting();
-        app.UseAuthentication();
+            app.UseRouting();
+            app.UseAuthentication();
+           
 
+            AppContext.SetSwitch("SCH_USE_STRONG_CRYPTO", true);
 
-        AppContext.SetSwitch("SCH_USE_STRONG_CRYPTO", true);
-
-        app.UseAuthorization();
-        app.UseEndpoints(
-            endpoints =>
-            {
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
-                endpoints.MapRazorPages();
-            });         
+            app.UseAuthorization();
+            app.UseEndpoints(
+                endpoints =>
+                {
+                    endpoints.MapControllerRoute(
+                        name: "default",
+                        pattern: "{controller=Home}/{action=Index}/{id?}");
+                    endpoints.MapRazorPages();
+                });         
         }
     }
 }
