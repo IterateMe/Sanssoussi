@@ -3,6 +3,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Sanssoussi.DatabaseAccesor;
+using System;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 
 namespace Sanssoussi
 {
@@ -15,11 +21,23 @@ namespace Sanssoussi
             this.Configuration = configuration;
         }
 
+
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
             services.AddRazorPages();
             services.AddControllersWithViews();
+
+            services.AddScoped<IDatabaseAccessor, ConcreteSqliteAccesor>();
+
+            services.AddCors();
+
+            services.AddAuthentication().AddGoogle(GoogleDefaults.AuthenticationScheme,googleOptions =>
+            {
+                googleOptions.ClientId = Configuration["Authentication:Google:ClientId"];
+                googleOptions.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -33,15 +51,18 @@ namespace Sanssoussi
             else
             {
                 app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
             }
 
             app.UseStaticFiles();
 
             app.UseRouting();
             app.UseAuthentication();
+           
+
+            AppContext.SetSwitch("SCH_USE_STRONG_CRYPTO", true);
 
             app.UseAuthorization();
-
             app.UseEndpoints(
                 endpoints =>
                 {
@@ -49,7 +70,7 @@ namespace Sanssoussi
                         name: "default",
                         pattern: "{controller=Home}/{action=Index}/{id?}");
                     endpoints.MapRazorPages();
-                });
+                });         
         }
     }
 }
