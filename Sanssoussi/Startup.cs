@@ -63,6 +63,13 @@ namespace Sanssoussi
             AppContext.SetSwitch("SCH_USE_STRONG_CRYPTO", true);
 
             app.UseAuthorization();
+
+            app.Use(async (context, next) => {
+                context.Response.Headers.Add("Content-Security-Policy-Report-Only", "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; frame-src 'self'");
+
+                await next();
+            });
+
             app.UseEndpoints(
                 endpoints =>
                 {
@@ -70,7 +77,8 @@ namespace Sanssoussi
                         name: "default",
                         pattern: "{controller=Home}/{action=Index}/{id?}");
                     endpoints.MapRazorPages();
-                });         
+                });
+            
         }
     }
 }

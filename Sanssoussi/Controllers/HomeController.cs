@@ -98,11 +98,6 @@ namespace Sanssoussi.Controllers
             return this.View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? this.HttpContext.TraceIdentifier });
         }
 
-        [HttpGet]
-        public IActionResult Emails()
-        {
-            return this.View();
-        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]

@@ -1,9 +1,9 @@
-﻿{
+{
   "profiles": {
     "Sanssoussi": {
       "commandName": "Project",
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:443",
+      "applicationUrl": "https://localhost:5001",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -11,7 +11,7 @@
     "Production": {
       "commandName": "Project",
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:443",
+      "applicationUrl": "https://localhost:5001",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Production"
       }

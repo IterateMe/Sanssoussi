@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Production' " />
   <ItemGroup>
     <None Remove="wwwroot\img\splash.png" />
   </ItemGroup>
